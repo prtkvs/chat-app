@@ -1,5 +1,6 @@
 
 import { Server,Socket } from "socket.io";
+import prisma from "./config/db.config.js";
 // import { produceMessage } from "./helper.js";
 
 interface CustomSocket extends Socket {
@@ -18,22 +19,15 @@ export function setupSocket(io: Server) {
   io.on("connection", (socket:CustomSocket) => {
     socket.join(socket.room);
     console.log("socket connected");
-    socket.on("message",(data)=>{
+    socket.on("message",async (data)=>{
       console.log("Server side message",data);
     //  socket.broadcast.emit("message",data);
-      io.to(socket.room).emit("message",data);
+      await prisma.chats.create({
+        data:data
+      });
+      socket.to(socket.room).emit("message",data);
     });
-    // * Join the room
-    // socket.join(socket.room);
 
-    // socket.on("message", async (data) => {
-    //   try {
-    //     await produceMessage("chats", data);
-    //   } catch (error) {
-    //     console.log("The kafka produce error is", error);
-    //   }
-    //   socket.to(socket.room).emit("message", data);
-    // });
 
     socket.on("disconnect", () => {
       console.log("A user disconnected:", socket.id);
